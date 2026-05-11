@@ -1,0 +1,6 @@
+username,database_name,query_text
+william,aidac,SELECT * FROM users;
+unknown,aidac,DROP TABLE customers;
+admin,aidac,DELETE FROM accounts;
+guest,aidac,SELECT * FROM products;
+hacker,aidac,SELECT * FROM users WHERE username='admin' OR 1=1 --;
