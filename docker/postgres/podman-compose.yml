@@ -1,0 +1,12 @@
+services:
+  postgres:
+    image: docker.io/postgres:16
+    container_name: aidac-postgres
+    environment:
+      POSTGRES_USER: william
+      POSTGRES_PASSWORD: Oracle2020
+      POSTGRES_DB: aidac
+    ports:
+      - "5432:5432"
+    volumes:
+      - /research/postgresql/data:/var/lib/postgresql/data
