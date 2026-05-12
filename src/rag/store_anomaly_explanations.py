@@ -30,7 +30,7 @@ def explain_sql_anomaly(query: str, risk_score: float, ml_anomaly: bool) -> str:
 
 conn = psycopg2.connect(
     host="localhost",
-    port=5432,
+    port=5433,
     database="aidac",
     user="william",
     password="Oracle2020"

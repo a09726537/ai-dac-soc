@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 conn = psycopg2.connect(
     host="localhost",
-    port=5432,
+    port=5433,
     database="aidac",
     user="william",
     password="Oracle2020"
