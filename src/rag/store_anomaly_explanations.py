@@ -1,17 +1,22 @@
 import psycopg2
 
-def explain_sql_anomaly(query: str, risk_score: float, ml_anomaly: bool) -> str:
+
+def explain_sql_anomaly(query: str, risk_score: float, ml_anomaly: bool):
     query_upper = query.upper()
     explanations = []
 
     if "DROP" in query_upper:
         explanations.append("Contains DROP: may delete database objects.")
+
     if "DELETE" in query_upper:
         explanations.append("Contains DELETE: may remove records.")
+
     if " OR 1=1" in query_upper or "--" in query_upper:
         explanations.append("Contains SQL injection-like pattern.")
+
     if "UNION" in query_upper:
         explanations.append("Contains UNION: may indicate data extraction.")
+
     if ml_anomaly:
         explanations.append("Autoencoder detected abnormal reconstruction behavior.")
 
@@ -48,6 +53,9 @@ CREATE TABLE IF NOT EXISTS anomaly_explanations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 """)
+
+# Prevent duplicate explanation accumulation between monitoring cycles
+cur.execute("TRUNCATE TABLE anomaly_explanations RESTART IDENTITY;")
 
 cur.execute("""
 SELECT
@@ -86,10 +94,12 @@ for log_id, query_text, risk_score, ml_anomaly in cur.fetchall():
 conn.commit()
 
 cur.execute("""
-SELECT log_id, severity, explanation
+SELECT
+    log_id,
+    severity,
+    explanation
 FROM anomaly_explanations
-ORDER BY id DESC
-LIMIT 10;
+ORDER BY id ASC;
 """)
 
 for row in cur.fetchall():
@@ -97,3 +107,5 @@ for row in cur.fetchall():
 
 cur.close()
 conn.close()
+
+print("Anomaly explanations refreshed successfully.")
