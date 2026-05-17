@@ -10,15 +10,33 @@ function App() {
     if (socketRef.current) return;
 
     const socket = new WebSocket("ws://localhost:8765");
+
     socketRef.current = socket;
 
-    socket.onopen = () => setConnected(true);
-    socket.onclose = () => setConnected(false);
+    socket.onopen = () => {
+      console.log("[WS] Connected");
+      setConnected(true);
+    };
+
+    socket.onclose = () => {
+      console.log("[WS] Disconnected");
+      setConnected(false);
+      socketRef.current = null;
+    };
+
+    socket.onerror = (err) => {
+      console.error("[WS ERROR]", err);
+      setConnected(false);
+    };
 
     socket.onmessage = (event) => {
+      console.log("[WS MESSAGE]", event.data);
+
       const alert = JSON.parse(event.data);
+
       setAlerts((prev) => {
-        if (prev.find((a) => a.id === alert.id)) return prev;
+        const exists = prev.find((a) => a.id === alert.id);
+        if (exists) return prev;
         return [alert, ...prev];
       });
     };
@@ -29,13 +47,22 @@ function App() {
     };
   }, []);
 
-  const critical = alerts.filter((a) => a.severity === "critical").length;
-  const suspicious = alerts.filter((a) => a.severity === "suspicious").length;
+  const critical = alerts.filter(
+    (a) => a.severity === "critical"
+  ).length;
+
+  const suspicious = alerts.filter(
+    (a) => a.severity === "suspicious"
+  ).length;
 
   return (
     <div className="layout">
       <aside className="sidebar">
-        <div className="brand">AI-DAC SOC</div>
+        <div className="brand">
+          AI-DAC
+          <br />
+          SOC
+        </div>
 
         <nav>
           <div className="nav active">Dashboard</div>
@@ -48,7 +75,9 @@ function App() {
 
         <div className="connection">
           <span className={connected ? "dot green" : "dot red"}></span>
+
           <strong>{connected ? "Connected" : "Disconnected"}</strong>
+
           <p>AI-DAC WebSocket</p>
         </div>
       </aside>
@@ -57,12 +86,12 @@ function App() {
         <header className="topbar">
           <div>
             <h1>AI-DAC SOC Dashboard</h1>
+
             <p>Real-time cyber threat monitoring and analysis</p>
           </div>
 
           <div className="protection">
-            <span className="shield">⬡</span>
-            AI-DAC Protection Active
+            ⬡ AI-DAC Protection Active
             <span className="dot green"></span>
           </div>
         </header>
@@ -97,6 +126,7 @@ function App() {
           <div className="panel-header">
             <div>
               <h2>Real-Time Cyber Alerts</h2>
+
               <p>Live stream of detected threats and suspicious activities</p>
             </div>
 
@@ -115,14 +145,24 @@ function App() {
               <div className="empty">No alerts received yet.</div>
             )}
 
-            {alerts.map((alert) => (
-              <div className={`table-row ${alert.severity}`} key={alert.id}>
-                <span className="badge">{alert.severity}</span>
-                <span>{alert.query}</span>
-                <span>{alert.explanation}</span>
-                <span>{alert.created_at}</span>
-              </div>
-            ))}
+            <div className="alerts-scroll">
+              {alerts.map((alert) => (
+                <div
+                  className={`table-row ${alert.severity}`}
+                  key={alert.id}
+                >
+                  <span className="badge">{alert.severity}</span>
+
+                  <span className="query">{alert.query}</span>
+
+                  <span className="explanation">{alert.explanation}</span>
+
+                  <span className="time">
+                    {new Date(alert.created_at).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       </main>
