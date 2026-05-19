@@ -20,24 +20,45 @@ import {
 
 import "./App.css";
 
+const API_URL = "http://192.168.136.132:8000/api/stats";
+const WS_URL = "ws://192.168.136.132:8765";
+
 function App() {
   const [alerts, setAlerts] = useState([]);
+  const [stats, setStats] = useState({
+    total_alerts: 0,
+    critical: 0,
+    suspicious: 0
+  });
+
   const [connected, setConnected] = useState(false);
   const [filter, setFilter] = useState("all");
-
   const [toastAlert, setToastAlert] = useState(null);
   const [analysisAlert, setAnalysisAlert] = useState(null);
 
   const socketRef = useRef(null);
   const toastTimerRef = useRef(null);
-
   const criticalAudio = useRef(null);
   const suspiciousAudio = useRef(null);
 
+  const fetchStats = () => {
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        console.log("API STATS:", data);
+        setStats(data);
+      })
+      .catch((err) => {
+        console.error("API ERROR", err);
+      });
+  };
+
   useEffect(() => {
+    fetchStats();
+
     if (socketRef.current) return;
 
-    const socket = new WebSocket("ws://192.168.136.132:8765");
+    const socket = new WebSocket(WS_URL);
     socketRef.current = socket;
 
     socket.onopen = () => {
@@ -86,6 +107,8 @@ function App() {
           if (exists) return prev;
           return [alert, ...prev];
         });
+
+        fetchStats();
       } catch (e) {
         console.error("Invalid WebSocket JSON", e);
       }
@@ -101,9 +124,6 @@ function App() {
     };
   }, []);
 
-  const critical = alerts.filter((a) => a.severity === "critical").length;
-  const suspicious = alerts.filter((a) => a.severity === "suspicious").length;
-
   const filteredAlerts = alerts.filter((alert) => {
     if (filter === "all") return true;
     return alert.severity === filter;
@@ -115,8 +135,8 @@ function App() {
   }));
 
   const severityData = [
-    { name: "Critical", value: critical },
-    { name: "Suspicious", value: suspicious }
+    { name: "Critical", value: stats.critical },
+    { name: "Suspicious", value: stats.suspicious }
   ];
 
   const shapData = [
@@ -175,25 +195,25 @@ function App() {
         <section className="cards">
           <div className="metric blue">
             <p>TOTAL LIVE ALERTS</p>
-            <h2>{alerts.length}</h2>
+            <h2>{stats.total_alerts}</h2>
             <span>↑ 100% from last hour</span>
           </div>
 
           <div className="metric red">
             <p>CRITICAL ALERTS</p>
-            <h2>{critical}</h2>
+            <h2>{stats.critical}</h2>
             <span>↑ high severity threats</span>
           </div>
 
           <div className="metric amber">
             <p>SUSPICIOUS ALERTS</p>
-            <h2>{suspicious}</h2>
+            <h2>{stats.suspicious}</h2>
             <span>potential threats</span>
           </div>
 
           <div className="metric green">
             <p>TOTAL LOGS ANALYZED</p>
-            <h2>{alerts.length}</h2>
+            <h2>{stats.total_alerts}</h2>
             <span>↑ 100% from last hour</span>
           </div>
         </section>
@@ -234,7 +254,6 @@ function App() {
                   <Cell fill="#ef4444" />
                   <Cell fill="#f59e0b" />
                 </Pie>
-
                 <Tooltip />
               </PieChart>
             </ResponsiveContainer>
@@ -306,10 +325,8 @@ function App() {
                     <td>
                       <span className="badge">{alert.severity}</span>
                     </td>
-
                     <td className="query">{alert.query}</td>
                     <td className="explanation">{alert.explanation}</td>
-
                     <td className="time">
                       {new Date(alert.created_at).toLocaleString()}
                     </td>
@@ -398,7 +415,6 @@ function App() {
               <>
                 <div className="assistant-message ai">
                   <strong>AI Analyst</strong>
-
                   <p>
                     A <b>{analysisAlert.severity}</b> database anomaly has been
                     detected. The query pattern indicates possible malicious
@@ -410,7 +426,6 @@ function App() {
 
                 <div className="assistant-message system">
                   <strong>System</strong>
-
                   <p>
                     MITRE ATT&CK: T1190
                     <br />
@@ -430,41 +445,41 @@ function App() {
         </section>
 
         <section className="timeline-panel">
-  <div className="timeline-header">
-    <h2 className="white-title">Threat Intelligence Timeline</h2>
-    <div className="timeline-live">● LIVE</div>
-  </div>
-
-  <div className="timeline-list">
-    {alerts.slice(0, 6).map((alert) => (
-      <div
-        className={`timeline-item ${alert.severity}`}
-        key={alert.id}
-      >
-        <div className="timeline-dot"></div>
-
-        <div className="timeline-mini-content">
-          <div className="timeline-mini-top">
-            <span className="timeline-mini-severity">
-              {alert.severity.toUpperCase()}
-            </span>
-
-            <span className="timeline-mini-time">
-              {new Date(alert.created_at).toLocaleTimeString()}
-            </span>
+          <div className="timeline-header">
+            <h2 className="white-title">Threat Intelligence Timeline</h2>
+            <div className="timeline-live">● LIVE</div>
           </div>
 
-          <div className="timeline-mini-text">
-            {alert.severity === "critical"
-              ? "Critical database attack pattern detected."
-              : "Suspicious query behavior observed."}
+          <div className="timeline-list">
+            {alerts.slice(0, 6).map((alert) => (
+              <div
+                className={`timeline-item ${alert.severity}`}
+                key={alert.id}
+              >
+                <div className="timeline-dot"></div>
+
+                <div className="timeline-mini-content">
+                  <div className="timeline-mini-top">
+                    <span className="timeline-mini-severity">
+                      {alert.severity.toUpperCase()}
+                    </span>
+
+                    <span className="timeline-mini-time">
+                      {new Date(alert.created_at).toLocaleTimeString()}
+                    </span>
+                  </div>
+
+                  <div className="timeline-mini-text">
+                    {alert.severity === "critical"
+                      ? "Critical database attack pattern detected."
+                      : "Suspicious query behavior observed."}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
-    ))}
-  </div>
-</section>
-        
+        </section>
+
         <audio ref={criticalAudio} src={criticalSound} />
         <audio ref={suspiciousAudio} src={suspiciousSound} />
       </main>
