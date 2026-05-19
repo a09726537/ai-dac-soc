@@ -1,0 +1,23 @@
+flowchart LR
+
+A[PostgreSQL Database]
+B[FastAPI Backend]
+C[WebSocket Server]
+D[React SOC Dashboard]
+E[AI Explainability Engine]
+F[MITRE ATT&CK Mapping]
+G[SHAP Visualization]
+H[AI SOC Analyst Assistant]
+I[Threat Intelligence Timeline]
+
+A --> B
+A --> C
+
+B --> D
+C --> D
+
+D --> E
+D --> F
+D --> G
+D --> H
+D --> I
